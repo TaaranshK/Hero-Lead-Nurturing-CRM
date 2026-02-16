@@ -8,6 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Dashboard statistics DTO
+ */
 @Getter
 @Setter
 @Builder

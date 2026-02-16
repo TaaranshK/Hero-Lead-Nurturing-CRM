@@ -78,7 +78,9 @@ public class DashboardService {
         for (Object[] row : results) {
             String source = (String) row[0];
             Long count = (Long) row[1];
-            response.put(source, count);
+            if (source != null) {
+                response.put(source, count);
+            }
         }
 
         return response;

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hero.leadnurturing.dto.ApiResponse;
+import com.hero.leadnurturing.dto.ChatMessageRequest;
 import com.hero.leadnurturing.entity.ChatMessage;
 import com.hero.leadnurturing.service.ChatService;
 
@@ -27,13 +28,13 @@ public class ChatController {
     @PostMapping("/{leadId}")
     public ApiResponse<ChatMessage> sendMessage(
             @PathVariable Long leadId,
-            @RequestBody String message,
+            @RequestBody ChatMessageRequest request,
             Authentication authentication
     ) {
 
         String username = authentication.getName();
 
-        ChatMessage chatMessage = chatService.sendMessage(leadId, username, message);
+        ChatMessage chatMessage = chatService.sendMessage(leadId, username, request.getMessage());
         
         return ApiResponse.<ChatMessage>builder()
                 .success(true)

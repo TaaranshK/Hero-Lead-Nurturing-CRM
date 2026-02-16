@@ -121,9 +121,13 @@ public class LeadController {
         Lead lead = leadRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lead not found"));
 
+        // Use a reference to the persisted Lead when creating the modification so
+        // Hibernate does not treat it as a transient object outside of a transaction.
+        Lead leadRef = leadRepository.getReferenceById(lead.getId());
+
         // Log modification
         LeadModification modification = LeadModification.builder()
-                .lead(lead)
+                .lead(leadRef)
                 .modifiedBy(authentication.getName())
                 .modifiedField("DELETED")
                 .oldValue("Lead deleted")

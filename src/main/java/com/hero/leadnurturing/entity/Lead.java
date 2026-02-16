@@ -1,11 +1,28 @@
 package com.hero.leadnurturing.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/**
+ * Lead entity - represents customer leads
+ */
 @Entity
 @Table(
         name = "leads",
@@ -25,8 +42,7 @@ public class Lead {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //  BASIC DETAILS 
-
+    // Basic Details
     @Column(name = "contact_number", nullable = false, length = 15)
     private String contactNumber;
 
@@ -48,8 +64,7 @@ public class Lead {
     @Column(name = "address", length = 255)
     private String address;
 
-    //  LEAD DETAILS 
-
+    // Lead Details
     @Column(name = "model_name", length = 100)
     private String modelName;
 
@@ -66,17 +81,17 @@ public class Lead {
     @Column(name = "status")
     private LeadStatus status;
 
-    //Audit Fields
-
+    // Audit Fields
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-  
-//Timestamp Handling
-  @PrePersist
+    /**
+     * Set timestamps before saving new lead
+     */
+    @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
@@ -85,6 +100,9 @@ public class Lead {
         }
     }
 
+    /**
+     * Update timestamp before updating lead
+     */
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

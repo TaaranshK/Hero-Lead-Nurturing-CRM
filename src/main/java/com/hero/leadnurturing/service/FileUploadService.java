@@ -2,6 +2,7 @@ package com.hero.leadnurturing.service;
 
 import com.hero.leadnurturing.dto.UploadResponseDTO;
 import com.hero.leadnurturing.entity.Lead;
+import com.hero.leadnurturing.entity.LeadStatus;
 import com.hero.leadnurturing.repository.LeadRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +35,23 @@ public class FileUploadService {
                 totalRecords++;
 
                 try {
+                    String contactNumber = getCellString(row.getCell(0));
+                    String firstName = getCellString(row.getCell(1));
+
+                    if (contactNumber.isBlank() || firstName.isBlank()) {
+                        failedRecords++;
+                        continue;
+                    }
+
                     Lead lead = Lead.builder()
-                            .contactNumber(row.getCell(0).getStringCellValue())
-                            .firstName(row.getCell(1).getStringCellValue())
-                            .city(row.getCell(2).getStringCellValue())
-                            .modelName(row.getCell(3).getStringCellValue())
-                            .leadSource(row.getCell(4).getStringCellValue())
+                            .contactNumber(contactNumber)
+                            .firstName(firstName)
+                            .city(getCellString(row.getCell(2)))
+                            .modelName(getCellString(row.getCell(3)))
+                            .leadSource(getCellString(row.getCell(4)))
+                            .status(LeadStatus.NEW)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
                             .build();
 
                     leadRepository.save(lead);
@@ -64,6 +77,45 @@ public class FileUploadService {
                     .successfulRecords(0)
                     .failedRecords(0)
                     .build();
+        }
+    }
+
+    private String getCellString(Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> {
+                double value = cell.getNumericCellValue();
+                if (value == Math.floor(value)) {
+                    yield String.valueOf((long) value);
+                }
+                yield String.valueOf(value);
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> getFormulaValue(cell);
+            default -> "";
+        };
+    }
+
+    private String getFormulaValue(Cell cell) {
+        try {
+            return switch (cell.getCachedFormulaResultType()) {
+                case STRING -> cell.getStringCellValue().trim();
+                case NUMERIC -> {
+                    double value = cell.getNumericCellValue();
+                    if (value == Math.floor(value)) {
+                        yield String.valueOf((long) value);
+                    }
+                    yield String.valueOf(value);
+                }
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
+        } catch (IllegalStateException ex) {
+            return "";
         }
     }
 }

@@ -3,6 +3,9 @@ package com.hero.leadnurturing.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * User entity - represents system users (HO and DA)
+ */
 @Entity
 @Table(name = "users")
 @Getter
