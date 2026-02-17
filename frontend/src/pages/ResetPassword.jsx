@@ -1,30 +1,55 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock } from 'lucide-react';
+import { ArrowLeft, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { authService } from '../services/authService';
 
 const ResetPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
+    setLoading(true);
+    const username = sessionStorage.getItem('recoveryUsername');
 
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters');
+    if (newPassword.length < 4) {
+      setError('Password must be at least 4 characters');
+      setLoading(false);
       return;
     }
 
-    // Success - redirect to login
-    navigate('/login');
+    try {
+      const response = await authService.resetPassword(username, newPassword, confirmPassword);
+      if (response.data.success) {
+        setSuccess(response.data.message || 'Password reset successful!');
+        // Clear recovery data
+        sessionStorage.removeItem('recoveryUsername');
+        sessionStorage.removeItem('recoveryEmail');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      } else {
+        setError(response.data.message || 'Password reset failed');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error resetting password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,7 +80,25 @@ const ResetPassword = () => {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">{error}</div>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-red-700">{error}</div>
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-green-700">{success}</div>
+              </motion.div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,8 +132,8 @@ const ResetPassword = () => {
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700">
-                RESET PASSWORD
+              <button type="submit" disabled={loading} className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50">
+                {loading ? 'RESETTING...' : 'RESET PASSWORD'}
               </button>
             </form>
           </div>

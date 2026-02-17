@@ -1,0 +1,131 @@
+Hero Lead Nurturing CRM — Presentation Script (Hinglish + English)
+Estimated recording length: ~9 minutes (8–10 min target)
+
+[Recording tips]
+- Speak naturally; pause 1–2 seconds between sentences. Keep a conversational tone.
+- Show code or UI when I cue [SHOW ...].
+- Use the timestamps as recording guidance; feel free to be a little faster or slower.
+
+---
+0:00 — 0:20 — Opening & Greeting
+
+Hello, namaste. I’m [Your Name]. Aaj main aapko "Hero Lead Nurturing CRM" dikhaunga — ek compact, production-ready lead management solution built for sales teams. Aaj ka walkthrough manager‑friendly hoga — technical, but simple and straight to the point.
+
+[SMILE — show title card: "Hero Lead Nurturing CRM"]
+
+---
+0:20 — 0:50 — Problem Statement (30s)
+
+Problem statement: Businesses often lose leads because follow-ups are inconsistent, team communication is spread across channels, and managers lack reliable analytics.
+Yaha pe maine solve kiya hai: centralized lead tracking, audit trails, team chat linked to leads, and an analytics dashboard so managers can monitor performance in real time.
+
+---
+0:50 — 1:30 — High-level Solution Summary (40s)
+
+Solution in one line: A layered web application — frontend in React for user experience, backend in Spring Boot exposing REST APIs, and MySQL for persistent storage.
+Key features: role-based access (Head Office / Dealer Agent), JWT authentication, lead CRUD with modification history (audit trail), dashboard analytics, lead‑scoped chat, and Excel upload for bulk import.
+
+[SHOW schematic: Frontend ↔ REST APIs ↔ Backend ↔ MySQL]
+
+---
+1:30 — 2:20 — Frontend Overview (50s)
+
+Frontend stack: React + Vite, Tailwind CSS for styling, Axios for HTTP calls, and Recharts for charts.
+User-facing pages include: Login, Dashboard, Lead List, Lead Details, Lead Create, Chat, and the password recovery flow.
+
+Files to highlight quickly: `App.jsx` (routes), `AuthContext.jsx` (session & token), `LeadList.jsx` (main table), `LeadDetails.jsx` (audit history), and `apiClient.js` (centralized Axios instance).
+
+Simple concept: the frontend calls small service functions — like `leadService.getAllLeads()` — which map to REST endpoints. `apiClient.js` automatically attaches the JWT token to requests so the backend knows which user is calling.
+
+[SHOW `LeadList.jsx` UI and filters briefly]
+
+---
+2:20 — 3:20 — Backend Overview (60s)
+
+Backend stack: Spring Boot, Spring Security, JWT, and Spring Data JPA for persistence.
+Layered design: Controller → Service → Repository.
+- Controllers expose endpoints, for example `LeadController` for `/api/leads` and `AuthController` for `/auth`.
+- Services implement business rules and create audit records, for example `LeadService` writes `LeadModification` entries when a lead changes.
+- Repositories talk to MySQL and offer query methods like `findByStatus` and `countByCreatedAtBetween` used by dashboard calculations.
+
+[SHOW `LeadController.java` and `LeadService.java` briefly]
+
+---
+3:20 — 4:00 — Security & Role-Based Access (40s)
+
+Security model: JWT-based stateless authentication.
+Login flow in simple terms: user posts credentials to `/auth/login`. Backend authenticates, creates a signed JWT, and returns it. Frontend stores the token and sends it with each request.
+
+Role-based access: Two roles — `ROLE_HO` (Head Office) and `ROLE_DA` (Dealer Agent). `SecurityConfig` enforces rules such as: only `ROLE_HO` can access dashboard endpoints, while both HO and DA can access lead endpoints.
+
+Yani manager ko full view chahiye toh HO role, field agent ko limited access chahiye toh DA role. Easy controls in `SecurityConfig.java`.
+
+[SHOW `SecurityConfig.java` snippet: route matchers and allowed roles]
+
+---
+4:00 — 5:00 — Login flow with JWT (60s)
+
+Detailed but simple explanation of JWT flow:
+1. User enters username/password in `Login.jsx` and submits. Frontend calls `authService.login()`.
+2. Backend `AuthController` authenticates via Spring Security. If successful, `JwtUtil` generates a token with username and an expiry — default 30 minutes.
+3. Token is returned in response. Frontend stores token in `localStorage` and stores small `user` object in `AuthContext`.
+4. For each subsequent API call, `apiClient` attaches `Authorization: Bearer <token>` header. On backend, `JwtAuthenticationFilter` inspects that header, validates the token, extracts username, loads user details and sets Spring Security context.
+5. If token expires, the backend returns 401; frontend interceptor clears session and redirects to login.
+
+This flow keeps the server stateless and scales well because we don't keep session data on server.
+
+---
+5:00 — 6:10 — Lead lifecycle, Audit Trail & Dashboard (70s)
+
+Lead creation & modification: When a user creates or updates a lead, frontend calls `POST /api/leads` or `PUT /api/leads/{id}`. On the backend, `LeadService` compares old and new values and writes `LeadModification` records describing who changed what and when. Yeh audit trail bahut useful hota hai for compliance and root-cause analysis.
+
+Example: change lead status from NEW to QUALIFIED → `LeadModification` stores `modifiedField=status`, `oldValue=NEW`, `newValue=QUALIFIED`, and `modifiedBy=username`.
+
+Dashboard analytics: `DashboardController` aggregates counts like total leads, qualified/unqualified/lost, computes conversion rate and source distribution. Frontend `Dashboard.jsx` consumes these stats and renders charts using Recharts.
+
+[SHOW Lead Details > Modification History panel and Dashboard charts briefly]
+
+---
+6:10 — 7:00 — Chat System & Excel Upload (50s)
+
+Chat: Each lead has a lead‑scoped conversation. UI calls `POST /api/chat/{leadId}` to send messages and `GET /api/chat/{leadId}` to fetch history. Right now it’s REST-based persistence — good for history and demo. For real-time, we can add WebSockets or an event bus.
+
+Excel Upload: There is an upload modal in `LeadList.jsx` which posts an Excel file to `POST /api/upload`. On backend, `FileUploadService` parses the file (using Apache POI or similar), validates rows, and creates leads in batch. The service returns `UploadResponseDTO` with success/failure counts and row-level errors if any.
+
+This helps onboarding large lead lists quickly — useful for dealerships importing leads from campaigns.
+
+---
+7:00 — 8:00 — Architecture, Scalability & Simple Tech Explanations (60s)
+
+Architecture recap: Layered approach keeps responsibilities separated — controllers for I/O, services for business rules, repositories for DB access. That makes the app easier to test and extend.
+
+Scalability notes:
+- Backend is stateless (JWT), so you can run multiple instances behind a load balancer.
+- Use server-side pagination for leads if dataset grows; add DB indexes on `createdAt`, `status`, and `city` to speed queries.
+- For heavy uploads, process files asynchronously (background jobs) and stream parse Excel to avoid memory spikes.
+- For chat real time, add WebSocket or use a managed messaging service.
+
+Simple concept: Stateless servers + shared DB + load balancer = scale horizontally.
+
+---
+8:00 — 8:40 — Future Improvements (40s)
+
+Planned enhancements:
+- Refresh / rotating JWT tokens for longer sessions and better security.
+- Audit search and export (PDF/Excel) for managers.
+- Real-time chat with presence indicators and attachments.
+- Advanced lead scoring and duplicate detection using heuristics.
+- Move secrets to environment variables or Vault and use HttpOnly cookies for tokens.
+
+These improvements make the platform production-grade for enterprise use.
+
+---
+8:40 — 9:00 — Closing & Call to Action (20s)
+
+Strong closing statement: "This is Hero Lead Nurturing CRM — built for scale, security, and real business outcomes. Agar aap chahen toh main next step mein aapke team ke liye a demo session arrange kar sakta hoon jahan hum onboarding, data import aur role-based scenarios real-time run karenge. Thank you — I look forward to your questions."
+
+[END — show repo path and contact details briefly]
+
+---
+
+Optional: If you want I can provide this as a timed teleprompter file with exact line breaks per 5–8 second cues, or generate a slide deck that matches each major timestamp. Tell me which one you prefer and I’ll create it next.

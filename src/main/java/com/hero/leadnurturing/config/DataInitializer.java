@@ -41,12 +41,13 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        // Check if users already exist
+        // Ensure test users exist and have emails (idempotent)
         if (userRepository.count() == 0) {
 
             // Create Head Office admin user
             User hoUser = User.builder()
                     .username("ho_admin")
+                    .email("admin@hero.com")
                     .password(passwordEncoder.encode("1234"))
                     .role(UserRole.ROLE_HO)
                     .build();
@@ -54,6 +55,7 @@ public class DataInitializer implements CommandLineRunner {
             // Create Dealer Agent user
             User daUser = User.builder()
                     .username("da_agent")
+                    .email("agent@hero.com")
                     .password(passwordEncoder.encode("1234"))
                     .role(UserRole.ROLE_DA)
                     .build();
@@ -63,6 +65,37 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(daUser);
 
             System.out.println("Test users created!");
+        } else {
+            // If users already exist, ensure their emails are populated (helps when DataInitializer was updated)
+            userRepository.findByUsername("ho_admin").ifPresent(u -> {
+                boolean changed = false;
+                if (u.getEmail() == null || u.getEmail().isEmpty()) {
+                    u.setEmail("admin@hero.com");
+                    changed = true;
+                    System.out.println("Updated ho_admin email");
+                }
+                // Ensure demo password is set correctly for local testing
+                u.setPassword(passwordEncoder.encode("1234"));
+                changed = true;
+                if (changed) {
+                    userRepository.save(u);
+                }
+            });
+
+            userRepository.findByUsername("da_agent").ifPresent(u -> {
+                boolean changed = false;
+                if (u.getEmail() == null || u.getEmail().isEmpty()) {
+                    u.setEmail("agent@hero.com");
+                    changed = true;
+                    System.out.println("Updated da_agent email");
+                }
+                // Ensure demo password is set correctly for local testing
+                u.setPassword(passwordEncoder.encode("1234"));
+                changed = true;
+                if (changed) {
+                    userRepository.save(u);
+                }
+            });
         }
 
         // Check if leads already exist

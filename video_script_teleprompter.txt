@@ -1,0 +1,158 @@
+Hero Lead Nurturing CRM — Teleprompter Script (humanized)
+Estimated length: 5–8 minutes — read at a comfortable pace.
+
+---
+
+Opening (Friendly, natural)
+
+Hi — welcome. Today I’m going to walk you through the Hero Lead Nurturing CRM.
+I’ll explain the system layer by layer and point out the key files you can mention on camera.
+I’ll also show the end‑to‑end flows you can demo.
+Keep the delivery relaxed — short sentences, small pauses, and show the code or the running app when I cue you.
+
+[ON SCREEN: Title card — “Hero Lead Nurturing CRM”]
+
+---
+
+Quick setup mention (one line)
+
+Run backend: `\.\mvnw.cmd -DskipTests spring-boot:run`
+Run frontend: `cd frontend && npm run dev`
+Default credentials: `ho_admin / 1234` (Head Office) and `da_agent / 1234` (Dealer Agent).
+
+---
+
+Presentation layer — Frontend (what to say)
+
+The frontend is a React app built with Vite. It’s responsible for the user interface, routing, and calling the backend APIs.
+When you show files, keep each line short and explain only the purpose.
+
+Files to name and one‑line use cases:
+- `App.jsx` — the route map for public and protected pages.
+- `Login.jsx` — login form and validation.
+- `LeadList.jsx` — main lead table, filters and bulk actions.
+- `LeadDetails.jsx` — detailed view for a single lead.
+- `LeadCreate.jsx` — the create‑lead form.
+- `Dashboard.jsx` — KPIs and charts for Head Office users.
+- `ChatHistory.jsx` — lead‑scoped chat interface.
+- `Layout.jsx`, `Header.jsx`, `Sidebar.jsx` — common layout components.
+- `PrivateRoute.jsx` — protects pages based on role.
+
+[PAUSE — show `LeadList.jsx` and `Dashboard.jsx` briefly]
+
+---
+
+Client API & state (short)
+
+This layer standardizes HTTP calls and stores the logged‑in user.
+Mention these files briefly:
+- `apiClient.js` — Axios instance that adds the JWT token and handles 401s.
+- `authService.js`, `leadService.js`, `chatService.js`, `dashboardService.js` — thin service wrappers for REST calls.
+- `AuthContext.jsx` — stores user info and token in localStorage and exposes login/logout.
+
+---
+
+Backend — Controller (what it exposes)
+
+The controllers form the API surface the frontend talks to.
+Say the endpoint responsibility and move on.
+
+Key files:
+- `AuthController.java` — login, forgot/verify/reset password.
+- `LeadController.java` — lead CRUD, filters and modification history.
+- `DashboardController.java` — aggregated stats for charts.
+- `ChatController.java` — send and read chat messages for a lead.
+- `UploadController.java` — Excel file upload for bulk leads.
+
+[ON SCREEN: Swagger or a quick curl showing `GET /api/leads`]
+
+---
+
+Backend — Service (business logic)
+
+Services implement business rules and audits — these are where behavior lives.
+Short file cues:
+- `LeadService.java` — lead rules, audit entries and dashboard helpers.
+- `DashboardService.java` — KPI calculations and source distribution.
+- `ChatService.java` — chat persistence and retrieval.
+- `FileUploadService.java` — parses Excel and creates leads.
+- `PasswordResetService.java` — OTP generation and reset logic.
+
+---
+
+Persistence & domain model (one sentence)
+
+JPA entities map to the database and repositories provide CRUD and queries.
+Files to call out: `Lead`, `User`, `ChatMessage`, `LeadModification`, and the repositories like `LeadRepository` and `UserRepository`.
+
+---
+
+Security & configuration (speak plainly)
+
+Security is JWT-based with role checks.
+Tell the audience:
+- `JwtUtil.java` generates and validates tokens (30‑minute expiry).
+- `JwtAuthenticationFilter.java` authenticates every request using the token.
+- `SecurityConfig.java` defines URL rules and CORS settings.
+- Passwords are BCrypt-hashed in `PasswordConfig.java`.
+
+[PAUSE — show `SecurityConfig.java` lines for a few seconds]
+
+---
+
+App bootstrap & utilities (very short)
+
+`DataInitializer.java` seeds demo users and sample leads so the app is demo‑ready.
+Mention helper scripts: `create_leads.ps1`, `upload_leads.ps1` and `test_endpoints.ps1`.
+
+---
+
+End‑to‑end flows — say these step‑by‑step
+
+1) Login (what to say and show)
+- Say: “User submits the login form.” Pause. “Frontend calls `authService.login()`.” Pause.
+- Say: “Backend's `AuthController` authenticates and returns a JWT.” Show localStorage token briefly.
+
+2) Load Lead List
+- Say: “LeadList calls `leadService.getAllLeads()`.” Pause.
+- Say: “Controller returns leads, UI renders the table and filters.” Show `LeadList.jsx` and the live table.
+
+3) Create or update a lead (with audit)
+- Say: “Creating a lead posts to `/api/leads`.” Pause. “Backend saves the lead and writes a `LeadModification` audit record.” Show the audit history in Lead Details.
+
+4) Bulk upload
+- Say: “Upload sends an Excel file to `/api/upload`.” Pause. “`FileUploadService` parses rows and creates leads in batch.” Show the upload modal and a quick success message.
+
+5) Chat for a lead
+- Say: “Chat UI posts messages to `/api/chat/{leadId}`.” Pause. “Messages are persisted and read back by `chatService.getChatHistory()`.” Open the Chat panel and send one test message.
+
+6) Forgot / verify / reset password
+- Say: “The forgot flow generates an OTP for demo, verify it, then call reset to update password (BCrypt).” Keep it short — show the screens.
+
+7) Token expiry handling
+- Say: “If the JWT expires, `apiClient` intercepts 401 responses, clears storage and redirects to login.” Show a simulated expired token scenario if needed.
+
+---
+
+Quick callouts — one‑liners you can read verbatim (pick a few)
+
+- “`AuthController.java` handles login and password reset endpoints.”
+- “`LeadController.java` is the main REST API for lead management.”
+- “`LeadService.java` records audit history when a lead is changed.”
+- “`apiClient.js` attaches the JWT to every request and handles 401s.”
+- “`AuthContext.jsx` persists user session in localStorage.”
+
+---
+
+Closing (natural, friendly)
+
+That’s the end of the walkthrough.
+If you want, I can convert this into a timed teleprompter with exact timestamps, a shorter 2‑minute pitch, or a slide deck to match the script.
+
+[ON SCREEN: show project root briefly — then fade to contact details or repo URL]
+
+---
+
+Read‑rate suggestion: keep sentences short, pause 1–2 seconds between flow steps, and 3 seconds before switching sections.
+
+End of script.

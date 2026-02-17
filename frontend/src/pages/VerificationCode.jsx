@@ -1,12 +1,17 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { authService } from '../services/authService';
 
 const VerificationCode = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(59);
   const inputRefs = useRef([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -33,9 +38,28 @@ const VerificationCode = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/reset-password');
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    const username = sessionStorage.getItem('recoveryUsername');
+    const otpValue = otp.join('');
+    try {
+      const response = await authService.verifyOtp(username, otpValue);
+      if (response.data.success) {
+        setSuccess(response.data.message || 'OTP verified successfully!');
+        setTimeout(() => {
+          navigate('/reset-password');
+        }, 1500);
+      } else {
+        setError(response.data.message || 'OTP verification failed');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error verifying OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +89,28 @@ const VerificationCode = () => {
               Please enter verification code we've send on your <span className="font-medium">registered email ID</span>.
             </div>
 
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-red-700">{error}</div>
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-green-700">{success}</div>
+              </motion.div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">OTP (ONE TIME PASSWORD)</label>
@@ -79,17 +125,49 @@ const VerificationCode = () => {
                       onChange={(e) => handleChange(index, e.target.value)}
                       onKeyDown={(e) => handleKeyDown(index, e)}
                       className="w-12 h-14 text-center text-xl font-semibold border-2 border-gray-300 rounded-lg focus:border-primary-500 focus:outline-none"
+                      disabled={loading}
                     />
                   ))}
                 </div>
                 <div className="flex justify-between items-center mt-3">
-                  <button type="button" className="text-sm text-primary-600 hover:text-primary-700">Resend</button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (loading) return;
+                      setError('');
+                      setSuccess('');
+                      const username = sessionStorage.getItem('recoveryUsername');
+                      const email = sessionStorage.getItem('recoveryEmail');
+                      if (!username || !email) {
+                        setError('Missing recovery information. Start again.');
+                        return;
+                      }
+                      setLoading(true);
+                      try {
+                        const res = await authService.forgotPassword(username, email);
+                        if (res.data?.success) {
+                          setSuccess('OTP resent');
+                          setTimer(59);
+                        } else {
+                          setError(res.data?.message || 'Failed to resend OTP');
+                        }
+                      } catch (err) {
+                        setError(err.response?.data?.message || 'Error resending OTP');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="text-sm text-primary-600 hover:text-primary-700"
+                    disabled={loading}
+                  >
+                    Resend
+                  </button>
                   <span className="text-sm text-red-600">00:{timer < 10 ? `0${timer}` : timer}</span>
                 </div>
               </div>
 
-              <button type="submit" className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700">
-                VERIFY
+              <button type="submit" disabled={loading} className="w-full bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50">
+                {loading ? 'VERIFYING...' : 'VERIFY'}
               </button>
             </form>
           </div>

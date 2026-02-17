@@ -1,22 +1,40 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail } from 'lucide-react';
+import { ArrowLeft, User, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { authService } from '../services/authService';
 
 const ForgotPassword = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      navigate('/verification-code');
-    }, 1000);
+    try {
+      const response = await authService.forgotPassword(username, email);
+      if (response.data.success) {
+        setSuccess(response.data.message);
+        // Store credentials for next screen
+        sessionStorage.setItem('recoveryUsername', username);        sessionStorage.setItem('recoveryEmail', email);        // Redirect to OTP verification after 1.5 seconds
+        setTimeout(() => {
+          navigate('/verification-code');
+        }, 1500);
+      } else {
+        setError(response.data.message || 'Failed to initiate password recovery');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Error initiating password recovery. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -65,6 +83,28 @@ const ForgotPassword = () => {
             <div className="bg-gray-50 rounded-lg p-4 mb-6 text-sm text-gray-600">
               To retrieve your password, please enter your <span className="font-medium">username</span> and <span className="font-medium">Email ID</span> to continue.
             </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <AlertCircle className="text-red-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-red-700">{error}</div>
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex gap-3"
+              >
+                <CheckCircle className="text-green-600 flex-shrink-0" size={20} />
+                <div className="text-sm text-green-700">{success}</div>
+              </motion.div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
